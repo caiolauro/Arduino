@@ -3,7 +3,7 @@ const int sensorMin = 0;     //  sensor minimum
 const int sensorMax = 1024;  // sensor maximum
 int fire_status;
 int sensorPin = 4;
-int counter = 0;
+int id = 100;
 #include "secrets.h"
 #include <WiFiClientSecure.h>
 #include <MQTTClient.h>
@@ -58,12 +58,30 @@ void connectAWS() {
 }
 
 int readData() {
-  int sensor_data = analogRead(32); // Issue with pins that can be used when WiFi lib is utilized --> https://stackoverflow.com/questions/74082200/mq-sensors-giving-0-value-when-using-wifi-h-esp32-but-works-fine-without-it
+  int sensor_data = analogRead(32);  // Issue with pins that can be used when WiFi lib is utilized --> https://stackoverflow.com/questions/74082200/mq-sensors-giving-0-value-when-using-wifi-h-esp32-but-works-fine-without-it
   return sensor_data;
 }
 
 void publishMessage() {
   StaticJsonDocument<200> doc;
+  int sensor_data = readData();
+  Serial.println(sensor_data);
+	int range = map(sensor_data,  sensorMin, sensorMax, 0, 3);
+    // range value:
+  switch (range) {
+  case 0:    // A fire closer than 1.5 feet away.
+    Serial.println("** Close  Fire **");
+    break;
+  case 1:    // A fire between 1-3 feet away.
+    Serial.println("**  Distant Fire **");
+    break;
+  case 2:    // No fire detected.
+    Serial.println("No  Fire");
+    break;
+  }
+
+  doc["id"] = id;
+  doc["fire_status"] = range;
   doc["sensor_data"] = readData();
   //Serial.println(doc);
   char jsonBuffer[512];
